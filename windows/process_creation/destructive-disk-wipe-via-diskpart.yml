@@ -1,0 +1,35 @@
+title: Destructive Disk Wipe via Diskpart
+id: 98582cde-2c60-4735-920f-b2ac861ece08
+status: experimental
+description: Detects the execution of the Windows 'diskpart' utility combined
+  with the 'clean all' command. This command forcefully overwrites all partition
+  data with zeroes and is utilized by destructive threats, such as Lotus Wiper,
+  to irrevocably destroy logical volumes.
+author: wakasa
+references:
+  - https://securelist.com/tr/lotus-wiper/119472/
+date: 2026-04-28
+tags:
+  - attack.impact
+  - attack.t1561.002
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  # Matches command lines invoking diskpart with the destructive 'clean all' instruction
+  # This also captures cmd.exe processes piping 'clean all' into diskpart
+  selection:
+    CommandLine|contains|all:
+      - 'diskpart'
+      - 'clean all'
+
+  # Tuning Suggestion: If this triggers on legitimate IT provisioning or decommissioning scripts,
+  # consider adding a filter to exclude specific service accounts or parent processes.
+  # filter_admin:
+  #   User|contains: 'Admin'
+  #   ParentImage|endswith: '\AuthorizedProvisioningTool.exe'
+  condition: selection
+falsepositives:
+  - Legitimate IT administration tasks, such as server decommissioning, storage
+    management, or OS provisioning scripts that securely wipe drives.
+level: high
