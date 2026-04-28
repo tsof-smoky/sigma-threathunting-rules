@@ -1,0 +1,39 @@
+title: Disk Exhaustion via Fsutil
+id: 68959fa6-619b-4951-abe2-751d086f155d
+status: experimental
+description: Detects the usage of the 'fsutil' command line tool to create a
+  massively sized file explicitly named 'DiskFillerFile' to exhaust available
+  disk space. This technique was observed in the Lotus Wiper destructive
+  campaign to corrupt system operations and complicate recovery efforts.
+author: wakasa
+references:
+  - https://securelist.com/tr/lotus-wiper/119472/
+date: 2026-04-28
+tags:
+  - attack.impact
+  - attack.t1499
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  # Matches the execution of the fsutil utility
+  selection_img:
+    - Image|endswith: '\fsutil.exe'
+    - OriginalFileName: 'fsutil.exe'
+
+  # Matches the command line parameters and specific filename used by Lotus Wiper
+  selection_cmd:
+    CommandLine|contains|all:
+      - 'file'
+      - 'createnew'
+      - 'DiskFillerFile'
+
+  # Tuning Suggestion: If internal testing scripts use this exact filename, uncomment and adjust the filter below.
+  # filter_testing:
+  #   User|contains: 'Tester'
+  #   ParentImage|endswith: '\StorageTest.exe'
+  condition: all of selection_*
+falsepositives:
+  - Highly unlikely, but possibly triggered by specific storage testing scripts
+    that coincidentally use the exact 'DiskFillerFile' naming convention.
+level: high
