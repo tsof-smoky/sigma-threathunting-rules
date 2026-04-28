@@ -1,0 +1,41 @@
+title: PowerShell Zone.Identifier ADS Removal
+id: 5da629a3-3509-44b3-b181-779dac3886fe
+status: experimental
+description: Detects the execution of PowerShell commands using the Remove-Item
+  cmdlet to explicitly target and delete the :Zone.Identifier Alternate Data
+  Stream (ADS). This technique is commonly used by adversaries to evade
+  Mark-of-the-Web (MOTW) detection and make downloaded malicious files appear
+  less suspicious.
+author: Tsof
+references:
+  - https://isc.sans.edu/diary/rss/32854
+date: 2026-04-03
+tags:
+  - attack.defense-evasion
+  - attack.t1070.004
+  - attack.t1564.004
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    # Target PowerShell executables
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    # Identify commands attempting to delete the Zone.Identifier Alternate Data Stream
+    CommandLine|contains|all:
+      - 'Remove-Item'
+      - ':Zone.Identifier'
+  # filter_legit_admin:
+  #   # Placeholder for tuning out known administrative or developer scripts that might clear MOTW using this method
+  #   CommandLine|contains:
+  #     - '\AdminScripts\'
+  #     - 'cleanup_motw.ps1'
+  condition: selection # and not filter_legit_admin
+falsepositives:
+  - Rare legitimate administrative or developer scripts explicitly cleaning up
+    MOTW flags instead of using the standard Unblock-File cmdlet.
+level: high
