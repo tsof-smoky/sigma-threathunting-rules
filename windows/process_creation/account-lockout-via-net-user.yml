@@ -1,0 +1,45 @@
+title: Account Lockout via Net User
+id: 3608ec95-f925-4f4a-b7b8-99a40740c6cd
+status: experimental
+description: Detects the specific usage of the 'net.exe' or 'net1.exe' command
+  to lock out user accounts by setting them to inactive and restricting login
+  times. This behavior was observed in the Lotus Wiper destructive campaign to
+  prevent remediation before wiping the system.
+author: wakasa
+references:
+  - https://securelist.com/tr/lotus-wiper/119472/
+date: 2026-04-28
+tags:
+  - attack.persistence
+  - attack.impact
+  - attack.t1098
+  - attack.t1531
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  # Matches the execution of net.exe or net1.exe
+  selection_img:
+    - Image|endswith:
+        - '\net.exe'
+        - '\net1.exe'
+    - OriginalFileName:
+        - 'net.exe'
+        - 'net1.exe'
+
+  # Matches the specific combination of flags used by the malware to disable the account and restrict login times
+  selection_cmd:
+    CommandLine|contains|all:
+      - 'user'
+      - '/active:no'
+      - '/times:'
+
+  # Tuning Suggestion: Uncomment and modify the below filter if legitimate admin scripts perform this exact combination of actions
+  # filter_legitimate_admin:
+  #   ParentImage|endswith: '\legitimate_admin_tool.exe'
+  condition: all of selection_*
+falsepositives:
+  - Legitimate administrative scripts that simultaneously disable accounts and
+    set specific login time restrictions, though this combination is highly
+    unusual.
+level: high
