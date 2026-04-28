@@ -1,0 +1,41 @@
+title: UI0Detect Service Query or Disablement Attempt
+id: cdada47c-cba4-4229-b431-119caca79fc4
+status: experimental
+description: Detects attempts to query, stop, or disable the legacy UI0Detect
+  (Interactive Services Detection) service using the 'sc.exe' utility. This
+  behavior was observed in the Lotus Wiper destructive campaign to suppress
+  interactive service warnings before wiping the system.
+author: wakasa
+references:
+  - https://securelist.com/tr/lotus-wiper/119472/
+date: 2026-04-28
+tags:
+  - attack.defense-evasion
+  - attack.t1562.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  # Matches the execution of the Service Control utility
+  selection_img:
+    - Image|endswith: '\sc.exe'
+    - OriginalFileName: 'sc.exe'
+    # Targets the legacy Interactive Services Detection service
+  selection_svc:
+    CommandLine|contains: 'UI0Detect'
+    # Matches the specific actions taken by the malware to query or disable the service
+  selection_action:
+    CommandLine|contains:
+      - 'stop'
+      - 'config'
+      - 'query'
+    # Tuning suggestion: If legitimate administration of older systems triggers this alert, you can uncomment and adjust the filter below.
+    # filter_legitimate_admin:
+    #     ParentImage|endswith: '\expected_admin_tool.exe'
+    #     User|contains: 'Admin'
+  condition: all of selection_*
+falsepositives:
+  - Legitimate administrative scripts managing legacy Windows services on older
+    operating systems (Note that UI0Detect was removed in Windows 10 version
+    1803, making its use highly unusual on modern systems).
+level: high
